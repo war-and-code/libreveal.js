@@ -7,6 +7,7 @@ Compatible only with Python 3 and requires Internet access to hit RetireJS Githu
 
 """
 
+from minify_js import minify_js
 from pathlib import Path
 from urllib.request import Request, urlopen
 
@@ -41,6 +42,27 @@ def _get_time_file_was_last_modified(file_path):
     except:
         last_modified = None
     return last_modified
+
+def delete_file(file_path):
+    if _does_file_exist(file_path):
+        try:
+            os.remove(file_path)
+        except:
+            # Fail out gracefully
+            pass
+
+def read_file_into_string(file_path):
+    with open(file_path, 'r') as in_file:
+        return in_file.read()
+    return ''
+
+def write_string_to_file(file_path, string):
+    try:
+        with open(file_path, 'w') as out_file:
+            out_file.write(string)
+            out_file.close()
+    except:
+        pass
 
 def does_librevealjs_exist():
     return _does_file_exist(LIBREVEALJS_PATH)
@@ -84,18 +106,26 @@ def write_out_to_json(data, out_path):
 def are_the_same(data1, data2):
     return data1.__dict__ == data2.__dict__
 
+def is_in_library_name_blacklist(string_to_check):
+    if string_to_check.lower() == 'retire-example':
+        return True
+    return False
+
 def get_all_func_extractors(list_of_retirejs_objects):
     extractor_map = {}
     for retirejs_object in list_of_retirejs_objects:
         for key, value in retirejs_object.items():
             library_name = key
-            if is_in_library_name_blacklist():
+            if is_in_library_name_blacklist(library_name):
                 # Skip this
                 continue
-            if 'bowername' in retirejs_object[key]:
-                library_name = retirejs_object[key]['bowername']
-            if 'extractors' in retirejs_object[key] and 'func' in retirejs_object[key]['extractors']:
-                for extractor in retirejs_object[key]['extractors']['func']:
+            if 'bowername' in value:
+                if isinstance(value['bowername'], list):
+                    library_name = value['bowername'][0]
+                else:
+                    library_name = value['bowername']
+            if 'extractors' in value and 'func' in value['extractors']:
+                for extractor in value['extractors']['func']:
                     if library_name not in extractor_map:
                         extractor_map[library_name] = []
                     extractor_map[library_name].append(extractor)
@@ -117,16 +147,17 @@ def was_last_libreveal_json_run_earlier_than_file_update():
     return determination
 
 def write_last_libreveal_json_run():
-    time_now = int(time.time())
-    with open(LAST_LIBREVEAL_JSON_RUN_PATH, 'w') as out_file:
-        out_file.write(str(time_now))
-        out_file.close()
+    time_now = str(int(time.time()))
+    write_string_to_file(LAST_LIBREVEAL_JSON_RUN_PATH, time_now)
 
-def get_error_as_json()
+def get_error_as_json():
     return '{"error":"' + error + '"}'
 
 def get_no_update_json():
     return '{"result":"No update, recompilation not needed"}'
+
+def get_success_json():
+    return '{"result":"Success"}'
 
 if __name__ == '__main__':
     if True == does_libreveal_json_exist():
@@ -141,7 +172,8 @@ if __name__ == '__main__':
             do_librevealjs_min = True
     online_retirejs = get_online_retirejs_repo()
     if online_retirejs == None:
-        return get_error_as_json()
+        print(get_error_as_json())
+        exit
     if False == does_local_retirejs_exist():
         write_out_to_json(online_retirejs, RETIREJS_LOCAL_PATH)
         do_librevealjs = True
@@ -149,10 +181,17 @@ if __name__ == '__main__':
     else:
         local_retirejs = get_local_retirejs_repo()
         if True == are_the_same(local_retirejs, online_retirejs):
-            return get_no_update_json()
+            print(get_no_update_json())
+            exit
+        else:
+            delete_file(RETIREJS_LOCAL_PATH)
+            write_out_to_json(online_retirejs, RETIREJS_LOCAL_PATH)
     if do_librevealjs:
         # TODO
         print('do_librevealjs')
     if do_librevealjs_min:
-        # TODO
-        print('do_librevealjs_min')
+        normal_librevealjs = read_file_into_string(LIBREVEALJS_PATH)
+        minified_librevealjs = minify_js(normal_librevealjs)
+        write_string_to_file(LIBREVEALJS_MIN_PATH, minified_librevealjs)
+    print(get_success_json())
+    exit
