@@ -76,6 +76,16 @@ def does_libreveal_json_exist():
 def does_local_retirejs_exist():
     return _does_file_exist(RETIREJS_LOCAL_PATH)
 
+def get_libreveal_json():
+    try:
+        with open(LIBREVEAL_JSON_PATH) as json_data:
+            d = json.load(json_data)
+            json_data.close()
+            return d
+    except:
+        # Fail gracefully here
+        return None
+
 def get_local_retirejs_repo():
     try:
         with open(RETIREJS_LOCAL_PATH) as json_data:
@@ -150,6 +160,10 @@ def write_last_libreveal_json_run():
     time_now = str(int(time.time()))
     write_string_to_file(LAST_LIBREVEAL_JSON_RUN_PATH, time_now)
 
+def make_librevealjs_from_extractors(extractor_maps):
+    # TODO
+    return 'TODO'
+
 def get_error_as_json():
     return '{"error":"' + error + '"}'
 
@@ -187,8 +201,13 @@ if __name__ == '__main__':
             delete_file(RETIREJS_LOCAL_PATH)
             write_out_to_json(online_retirejs, RETIREJS_LOCAL_PATH)
     if do_librevealjs:
-        # TODO
-        print('do_librevealjs')
+        objects_to_parse_for_extractors = [online_retirejs]
+        if True == does_libreveal_json_exist():
+            libreveal_json = get_libreveal_json()
+            objects_to_parse_for_extractors.append(libreveal_json)
+        js_extractor_maps = get_all_func_extractors(objects_to_parse_for_extractors)
+        librevealjs_script = make_librevealjs_from_extractors(js_extractor_maps)
+        write_string_to_file(LIBREVEALJS_PATH, librevealjs_script)
     if do_librevealjs_min:
         normal_librevealjs = read_file_into_string(LIBREVEALJS_PATH)
         minified_librevealjs = minify_js(normal_librevealjs)
