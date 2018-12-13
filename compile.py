@@ -160,9 +160,62 @@ def write_last_libreveal_json_run():
     time_now = str(int(time.time()))
     write_string_to_file(LAST_LIBREVEAL_JSON_RUN_PATH, time_now)
 
+def get_js_existence_logic_from_function(js_function):
+    script = '('
+    function_split_on_spaces = js_function.split(' ')
+    for substring in function_split_on_spaces:
+        substring_split_on_periods = substring.split('.')
+        building_part = ''
+        for s_substring in substring_split_on_periods:
+            script += 'typeof '
+            thinks_this_is_first = True
+            if 0 != len(building_part):
+                building_part += '.'
+                thinks_this_is_first = False
+            building_part += s_substring
+            script += building_part
+            script += ' !== "undefined"'
+            if False == thinks_this_is_first:
+                script += ' && '
+        break # Not utilizing space-delimited parts currently
+    if script.endswith(' && '):
+        script = script[:-4]
+    script += ')'
+    return script
+
 def make_librevealjs_from_extractors(extractor_maps):
-    # TODO
-    return 'TODO'
+    script = ''
+    script += '// libreveal.js'
+    script += '\n'
+    # FIXME there could be duplicate/overlapping content across extractor maps
+    for extractor_map in extractor_maps:
+        for key, value in extractor_map.items():
+            library_name = key
+            script += '\n'
+            script += '// '
+            script += library_name
+            first_if = True
+            for extractor_function in value:
+                script += '\n'
+                existence_logic = get_js_existence_logic_from_function(extractor_function)
+                if True == first_if:
+                    script += 'if '
+                    first_if = False
+                else:
+                    script += 'else if '
+                script += existence_logic
+                script += '\n'
+                script += '{'
+                # At this point, the extractor function should work, so print it
+                script += '\n\t'
+                script += 'console.log("libreveal.js: '
+                script += library_name
+                script += ' @ " + '
+                script += extractor_function
+                script += ');'
+                script += '\n'
+                script += '}'
+    return script
 
 def get_error_as_json():
     return '{"error":"' + error + '"}'
