@@ -13,11 +13,12 @@ See the unminified [**libreveal.js**](https://github.com/gingeleski/libreveal.js
 
 ## Support libraries
 
-Currently (v1.0) this will detect...
+Currently this will detect...
 
 - jQuery
 - Angular
 - Bootstrap
+- YUI
 
 ## Credit
 
