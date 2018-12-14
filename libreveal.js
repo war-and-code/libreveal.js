@@ -29,3 +29,9 @@ if (typeof $ !== 'undefined' && typeof $.fn !== 'undefined' && typeof $.fn.toolt
 {
     console.log('libreveal.js: bootstrap @ ' + $.fn.tooltip.Constructor.VERSION);
 }
+
+// YUI
+if (typeof YUI !== 'undefined')
+{
+    console.log('libreveal.js: YUI @ ' + YUI.version);
+}
