@@ -1,7 +1,0 @@
-{
-	"bootstrap": {
-		"extractors" : {
-            "func" : [ "$.fn.tooltip.Constructor.VERSION" ]
-		}
-	}
-}
