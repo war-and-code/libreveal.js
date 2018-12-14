@@ -114,7 +114,7 @@ def write_out_to_json(data, out_path):
         out_file.close()
 
 def are_the_same(data1, data2):
-    return data1.__dict__ == data2.__dict__
+    return data1 == data2
 
 def is_in_library_name_blacklist(string_to_check):
     if string_to_check.lower() == 'retire-example':
