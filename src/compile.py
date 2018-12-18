@@ -141,8 +141,27 @@ def get_all_func_extractors(list_of_retirejs_objects):
                 for extractor in value['extractors']['func']:
                     if library_name not in extractor_map:
                         extractor_map[library_name] = []
-                    extractor_map[library_name].append(extractor)
+                    broken_up_extractors = break_up_compound_extractors(extractor)
+                    for broken_up_extractor in broken_up_extractors:
+                        extractor_map[library_name].append(broken_up_extractor)
     return extractor_map
+
+def break_up_compound_extractors(possible_compound_extractor):
+    extractors = []
+    this_func_wo_spaces = possible_compound_extractor.replace(' ', '')
+    or_in_parentheses_pattern = re.compile(r'\([a-zA-Z\$\|]+\)\.')
+    if or_in_parentheses_pattern.match(this_func_wo_spaces):
+        match = re.search(r'\([a-zA-Z\$\|]+\)\.', this_func_wo_spaces)
+        parts = match.group(0).replace('(','').replace(')','').replace('.','').split('|')
+        rest = this_func_wo_spaces.split(')')[1]
+        for part in parts:
+            if len(part.strip()) > 0:
+                broken_up_extractor = part + rest
+                # TODO could check here if valid javascript, to be safe
+                extractors.append(broken_up_extractor)
+    else:
+        extractors.append(possible_compound_extractor)
+    return extractors
 
 def was_last_libreveal_json_run_earlier_than_file_update():
     determination = True
@@ -163,26 +182,13 @@ def write_last_libreveal_json_run():
     time_now = str(int(time.time()))
     write_string_to_file(LAST_LIBREVEAL_JSON_RUN_PATH, time_now)
 
-def get_js_existence_logic_from_function(js_func):
-    pieces_of_existence_logic = []
-    js_func_wo_spaces = js_func(' ', '')
-    individual_extractors = []
-    or_in_parentheses_pattern = re.compile(r'\([a-zA-Z\$\|]+\)\.')
-    if or_in_parentheses_pattern.match(js_func_wo_spaces):
-        match = re.search(r'\([a-zA-Z\$\|]+\)\.', test_string)
-        parts = match.group(0).replace('(','').replace(')','').replace('.','').split('|')
-        rest = js_func_wo_spaces.split(')')[1]
-        for part in parts:
-            individual_extractor = part + rest
-            # TODO could check here if valid javascript, to be safe
-            individual_extractors.append(individual_extractor)
-    else:
-        individual_extractors.append(js_func)
-    for this_extractor in individual_extractors:
-        script = '('
-        split_substrings = this_extractor.split('.')
+def get_js_existence_logic_from_function(js_function):
+    script = '('
+    function_split_on_spaces = js_function.split(' ')
+    for substring in function_split_on_spaces:
+        substring_split_on_periods = substring.split('.')
         building_part = ''
-        for s_substring in split_substrings:
+        for s_substring in substring_split_on_periods:
             script += 'typeof '
             thinks_this_is_first = True
             if 0 != len(building_part):
@@ -193,11 +199,11 @@ def get_js_existence_logic_from_function(js_func):
             script += ' !== "undefined"'
             if False == thinks_this_is_first:
                 script += ' && '
-        if script.endswith(' && '):
-            script = script[:-4]
-        script += ')'
-        pieces_of_existence_logic.append(script)
-    return pieces_of_existence_logic
+        break # Not utilizing space-delimited parts currently
+    if script.endswith(' && '):
+        script = script[:-4]
+    script += ')'
+    return script
 
 def make_librevealjs_from_extractors(extractor_map):
     script = ''
