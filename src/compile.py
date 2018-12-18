@@ -190,7 +190,6 @@ def get_js_existence_logic_from_function(js_function):
         building_part = ''
         for s_substring in substring_split_on_periods:
             script += 'typeof '
-            thinks_this_is_first = True
             if 0 != len(building_part):
                 building_part += '.'
             building_part += s_substring
