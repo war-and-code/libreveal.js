@@ -193,12 +193,9 @@ def get_js_existence_logic_from_function(js_function):
             thinks_this_is_first = True
             if 0 != len(building_part):
                 building_part += '.'
-                thinks_this_is_first = False
             building_part += s_substring
             script += building_part
-            script += ' !== "undefined"'
-            if False == thinks_this_is_first:
-                script += ' && '
+            script += ' !== "undefined" && '
         break # Not utilizing space-delimited parts currently
     if script.endswith(' && '):
         script = script[:-4]
