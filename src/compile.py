@@ -13,6 +13,7 @@ from urllib.request import Request, urlopen
 
 import json
 import os
+import re
 import time
 
 FORCE_RUN = True
@@ -162,13 +163,26 @@ def write_last_libreveal_json_run():
     time_now = str(int(time.time()))
     write_string_to_file(LAST_LIBREVEAL_JSON_RUN_PATH, time_now)
 
-def get_js_existence_logic_from_function(js_function):
-    script = '('
-    function_split_on_spaces = js_function.split(' ')
-    for substring in function_split_on_spaces:
-        substring_split_on_periods = substring.split('.')
+def get_js_existence_logic_from_function(js_func):
+    pieces_of_existence_logic = []
+    js_func_wo_spaces = js_func(' ', '')
+    individual_extractors = []
+    or_in_parentheses_pattern = re.compile(r'\([a-zA-Z\$\|]+\)\.')
+    if or_in_parentheses_pattern.match(js_func_wo_spaces):
+        match = re.search(r'\([a-zA-Z\$\|]+\)\.', test_string)
+        parts = match.group(0).replace('(','').replace(')','').replace('.','').split('|')
+        rest = js_func_wo_spaces.split(')')[1]
+        for part in parts:
+            individual_extractor = part + rest
+            # TODO could check here if valid javascript, to be safe
+            individual_extractors.append(individual_extractor)
+    else:
+        individual_extractors.append(js_func)
+    for this_extractor in individual_extractors:
+        script = '('
+        split_substrings = this_extractor.split('.')
         building_part = ''
-        for s_substring in substring_split_on_periods:
+        for s_substring in split_substrings:
             script += 'typeof '
             thinks_this_is_first = True
             if 0 != len(building_part):
@@ -179,11 +193,11 @@ def get_js_existence_logic_from_function(js_function):
             script += ' !== "undefined"'
             if False == thinks_this_is_first:
                 script += ' && '
-        break # Not utilizing space-delimited parts currently
-    if script.endswith(' && '):
-        script = script[:-4]
-    script += ')'
-    return script
+        if script.endswith(' && '):
+            script = script[:-4]
+        script += ')'
+        pieces_of_existence_logic.append(script)
+    return pieces_of_existence_logic
 
 def make_librevealjs_from_extractors(extractor_map):
     script = ''
