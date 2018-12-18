@@ -15,6 +15,8 @@ import json
 import os
 import time
 
+FORCE_RUN = True
+
 LIBREVEALJS_PATH = '../libreveal.js'
 LIBREVEALJS_MIN_PATH = '../libreveal.min.js'
 
@@ -183,38 +185,36 @@ def get_js_existence_logic_from_function(js_function):
     script += ')'
     return script
 
-def make_librevealjs_from_extractors(extractor_maps):
+def make_librevealjs_from_extractors(extractor_map):
     script = ''
     script += '// libreveal.js'
     script += '\n'
-    # FIXME there could be duplicate/overlapping content across extractor maps
-    for extractor_map in extractor_maps:
-        for key, value in extractor_map.items():
-            library_name = key
+    for key, value in extractor_map.items():
+        library_name = key
+        script += '\n'
+        script += '// '
+        script += library_name
+        first_if = True
+        for extractor_function in value:
             script += '\n'
-            script += '// '
+            existence_logic = get_js_existence_logic_from_function(extractor_function)
+            if True == first_if:
+                script += 'if '
+                first_if = False
+            else:
+                script += 'else if '
+            script += existence_logic
+            script += '\n'
+            script += '{'
+            # At this point, the extractor function should work, so print it
+            script += '\n\t'
+            script += 'console.log("libreveal.js: '
             script += library_name
-            first_if = True
-            for extractor_function in value:
-                script += '\n'
-                existence_logic = get_js_existence_logic_from_function(extractor_function)
-                if True == first_if:
-                    script += 'if '
-                    first_if = False
-                else:
-                    script += 'else if '
-                script += existence_logic
-                script += '\n'
-                script += '{'
-                # At this point, the extractor function should work, so print it
-                script += '\n\t'
-                script += 'console.log("libreveal.js: '
-                script += library_name
-                script += ' @ " + '
-                script += extractor_function
-                script += ');'
-                script += '\n'
-                script += '}'
+            script += ' @ " + '
+            script += extractor_function
+            script += ');'
+            script += '\n'
+            script += '}'
     return script
 
 def get_error_as_json():
@@ -227,21 +227,25 @@ def get_success_json():
     return '{"result":"Success"}'
 
 if __name__ == '__main__':
-    if True == does_libreveal_json_exist():
-        if True == was_last_libreveal_json_run_earlier_than_file_update():
-            do_librevealjs = True
-            do_librevealjs_min = True
-        write_last_libreveal_json_run()
+    if FORCE_RUN:
+        do_librevealjs = True
+        do_librevealjs_min = True
     else:
-        if False == does_librevealjs_exist():
-            do_librevealjs = True
-        if False == does_librevealjs_min_exist():
-            do_librevealjs_min = True
+        if True == does_libreveal_json_exist():
+            if True == was_last_libreveal_json_run_earlier_than_file_update():
+                do_librevealjs = True
+                do_librevealjs_min = True
+            write_last_libreveal_json_run()
+        else:
+            if False == does_librevealjs_exist():
+                do_librevealjs = True
+            if False == does_librevealjs_min_exist():
+                do_librevealjs_min = True
     online_retirejs = get_online_retirejs_repo()
     if online_retirejs == None:
         print(get_error_as_json())
         exit
-    if False == does_local_retirejs_exist():
+    if False == does_local_retirejs_exist() or FORCE_RUN:
         write_out_to_json(online_retirejs, RETIREJS_LOCAL_PATH)
         do_librevealjs = True
         do_librevealjs_min = True
@@ -258,8 +262,8 @@ if __name__ == '__main__':
         if True == does_libreveal_json_exist():
             libreveal_json = get_libreveal_json()
             objects_to_parse_for_extractors.append(libreveal_json)
-        js_extractor_maps = get_all_func_extractors(objects_to_parse_for_extractors)
-        librevealjs_script = make_librevealjs_from_extractors(js_extractor_maps)
+        js_extractor_map = get_all_func_extractors(objects_to_parse_for_extractors)
+        librevealjs_script = make_librevealjs_from_extractors(js_extractor_map)
         write_string_to_file(LIBREVEALJS_PATH, librevealjs_script)
     if do_librevealjs_min:
         normal_librevealjs = read_file_into_string(LIBREVEALJS_PATH)
