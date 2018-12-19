@@ -160,7 +160,9 @@ def break_up_compound_extractors(possible_compound_extractor):
                 # TODO could check here if valid javascript, to be safe
                 extractors.append(broken_up_extractor)
     else:
-        extractors.append(possible_compound_extractor)
+        # Below check if a hokey fix for a one-off error where extractor constructs an object
+        if False == possible_compound_extractor.lower().startswith('new '):
+            extractors.append(possible_compound_extractor)
     return extractors
 
 def was_last_libreveal_json_run_earlier_than_file_update():
@@ -199,15 +201,31 @@ def get_js_existence_logic_from_function(js_function):
     if script.endswith(' && '):
         script = script[:-4]
     script += ')'
+    # Sometimes extractor uses a function first, need to check definition differently
+    # Doing that check post-partum here... kinda out of laziness :p
+    spaces = 0
+    open_paren = False
+    close_paren = False
+    for character in script:
+        if character == ' ':
+            spaces += 1
+        if spaces > 1:
+            break
+        if character == '(':
+            open_paren = True
+        if character == ')':
+            close_paren = True
+        if open_paren and close_paren:
+            root_function = script.split(' ')[1].split('(')[0]
+            script = script.replace(script.split(' ')[1], root_function, 1)
     return script
 
 def make_librevealjs_from_extractors(extractor_map):
     script = ''
     script += '// libreveal.js'
-    script += '\n'
     for key, value in extractor_map.items():
         library_name = key
-        script += '\n'
+        script += '\n\n'
         script += '// '
         script += library_name
         first_if = True
