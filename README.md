@@ -16,9 +16,28 @@ See the unminified [**libreveal.js**](https://github.com/gingeleski/libreveal.js
 Currently this will detect...
 
 - jQuery
-- Angular
-- Bootstrap
+    - jQuery Validator
+    - jQuery Mobile
+    - jQuery UI
+    - jQuery Pretty Photo
+- tinymce
 - YUI
+- Prototype
+- Ember
+- Dojo
+- Angular
+- Backbone
+- Mustache
+- Handlebars
+- Plupload
+- dompurify
+- React
+- DWR
+- Moment
+- CKEditor
+- Vue
+- ExtJS
+- Bootstrap
 
 ## Credit
 
